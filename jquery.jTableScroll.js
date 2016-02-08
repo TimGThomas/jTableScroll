@@ -20,7 +20,7 @@
             reactive: true
         }, o || {});
 
-        //get scrollbar size             
+        //get scrollbar size
         var dummy = $('<div>').css({ visibility: 'hidden', width: '50px', height:'50px', overflow: 'scroll' }).appendTo('body');
         var scrollbarpx = 50 - $('<div>').height(99).appendTo(dummy).outerWidth();
         dummy.remove();
@@ -38,24 +38,24 @@
             var self = $(this);
             var parent = self.parent();
             var prevParentWidth = parent.width();
+            var prevParentHeight = parent.height();
             var divWidth = parseInt(o.width ? o.width : parent.width());
             var divHeight = parseInt(o.height ? o.height : parent.height());
-
 
             //bypass if table size smaller than given dimesions
             if (self.width() <= divWidth && self.height() <= divHeight)
                 return;
 
             var width = self.width();
-            self.width(width); //reinforce table width so it doesn't change dynamically 
+            self.width(width); //reinforce table width so it doesn't change dynamically
 
             //Create outer div
             var outerdiv = $(document.createElement('div'));
-            outerdiv.css({ 'overflow': 'hidden' }).width(divWidth).height(divHeight);
+            outerdiv.css({ 'overflow': 'hidden', 'position': 'relative' }).width(divWidth + scrollbarpx).height(divHeight);
 
             //Create header div
             var headerdiv = $(document.createElement('div'));
-            headerdiv.css({ 'overflow': 'hidden', 'position': 'relative' }).width(divWidth);
+            headerdiv.css({ 'overflow': 'hidden', 'position': 'relative' }).width(divWidth + scrollbarpx);
             if (o.headerCss)
                 headerdiv.addClass(o.headerCss);
 
@@ -92,7 +92,10 @@
 
             //Create footer div
             var footerdiv = $(document.createElement('div'));
-            footerdiv.css({ 'overflow': 'hidden', 'position': 'relative', 'background-color': headBgColor }).width(divWidth);
+            footerdiv.css({ 'overflow': 'hidden', 'position': 'absolute', 'bottom': 0, 'background-color': headBgColor }).width(divWidth + scrollbarpx);
+
+            if (o.footerCss)
+                footerdiv.addClass(o.footerCss);
 
             cloneTable.css({ 'table-layout': 'fixed', 'background-color': headBgColor });
             cloneFoot.css({ 'table-layout': 'fixed', 'background-color': headBgColor });
@@ -130,7 +133,10 @@
             marginBottom -= footerdiv.height();
             if (self.width() + scrollbarpx >= divWidth)
                 marginBottom -= scrollbarpx;
-            bodydiv.css({ 'overflow': 'auto', 'margin-top': marginTop + 'px', 'margin-bottom': marginBottom + 'px' }).width(divWidth).height(divHeight - scrollbarpx);
+            bodydiv.css({ 'overflow': 'auto', 'margin-top': marginTop + 'px', 'margin-bottom': marginBottom + 'px' }).width(divWidth + scrollbarpx).height(divHeight);
+
+            if (o.bodyCss)
+                bodydiv.addClass(o.bodyCss);
 
             if (ie8)
                 self.find('thead').hide();
@@ -138,6 +144,17 @@
             //Add reactive resizing
             if (o.reactive) {
                 $(window).resize(function () {
+                    if (prevParentHeight != parent.height()) {
+                        var newHeight = parent.height();
+                        if (!o.height || newHeight <= o.height) {
+                          outerdiv.css({ 'overflow': 'hidden' }).width(divWidth + scrollbarpx).height(newHeight);
+                          headerdiv.css({ 'overflow': 'hidden', 'position': 'relative' }).width(divWidth);
+                          bodydiv.css({ 'overflow': 'auto', 'margin-top': marginTop + 'px', 'margin-bottom': marginBottom + 'px' }).width(divWidth + scrollbarpx).height(newHeight);
+                          footerdiv.css({ 'overflow': 'hidden', 'position': 'absolute', 'background-color': headBgColor }).width(divWidth);
+                          prevParentHeight = newHeight;
+                        }
+                    }
+
                     if (prevParentWidth != parent.width()) {
                         var newWidth = parent.width();
                         if (o.width && newWidth > o.width)
